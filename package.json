@@ -1,0 +1,21 @@
+{
+  "name": "node-audio-server",
+  "description": "Audio server for Node.js with client integration"
+  "version": "0.0.1",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha --recursive \"./src/**/test/*.js\"",
+    "test-watch": "mocha --recursive \"./src/**/test/*.js\"  --watch",
+    "start": "node server.js"
+  },
+  "author": "Sérgio Crisóstomo",
+  "license": "ISC",
+  "dependencies": {
+    "wavefile": "^11.0.0"
+  },
+  "devDependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "prettier": "^2.0.5"
+  },
+}
