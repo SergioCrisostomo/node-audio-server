@@ -17,6 +17,7 @@ This project aims to create a server and client for serving audio between Node.j
 
 - [x] generate playlists with different bitrates from WAV files
 - [x] middleware to serve audio chunks
+- [x] test consuming sequential chunks using MSE api
 - [ ] client side player with basic functionality
   - [ ] enable seek
   - [ ] use different bitrates depending on network performance
