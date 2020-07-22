@@ -6,7 +6,7 @@ const generateChunks = require("./generateChunks");
 
 const defaults = require("./defaults");
 
-const FLAC = "flac";
+const FLAC = "flac"; // 1411.2 kbps
 const DEBUG = false;
 
 const chunkNames = (codec, numberOfChunks, outputBaseName) =>
