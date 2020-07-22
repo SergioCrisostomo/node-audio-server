@@ -7,7 +7,7 @@ const defaults = require("./defaults");
 
 const DEBUG = false;
 
-module.exports = async (originPath, targetPath) => {
+module.exports = async (originPath, targetPath, options = {}) => {
   const wavFiles = await getFiles(originPath, "wav");
 
   const generators = wavFiles.map(async (inputFileName) => {
@@ -28,6 +28,7 @@ module.exports = async (originPath, targetPath) => {
       inputFileName,
       outputBaseName,
       bitrates: defaults.bitrates,
+      ...options,
     };
     return await playlistsFactory(config);
   });

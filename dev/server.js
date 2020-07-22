@@ -8,7 +8,9 @@ const getFiles = require("../src/server/utils/getFiles");
 
 const mediaFolder = path.join(__dirname, "media/output");
 api
-  .createPlaylist(path.join(__dirname, "media"), mediaFolder)
+  .createPlaylist(path.join(__dirname, "media"), mediaFolder, {
+    segmentTime: 5,
+  })
   .catch((err) => console.log("::: createPlaylist failed", err));
 
 const getChunk = api.serveAudio({ mediaFolder });
