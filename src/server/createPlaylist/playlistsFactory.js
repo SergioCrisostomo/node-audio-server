@@ -7,14 +7,16 @@ const generateChunks = require("./generateChunks");
 const defaults = require("./defaults");
 
 const FLAC = "flac"; // 1411.2 kbps
+const OPUS = "opus";
 const DEBUG = false;
 
 const chunkNames = (codec, numberOfChunks, outputBaseName) =>
   [...Array(numberOfChunks)].map((_, i) => {
+    const chunkBaseName = path.basename(outputBaseName);
     const index = ("0".repeat(defaults.digitsInName) + i).slice(
       -defaults.digitsInName
     );
-    return `${outputBaseName}_${index}.${codec}`;
+    return `${chunkBaseName}_${index}.${codec}`;
   });
 
 // ffmpeg -i somefile.mp3 -f segment -segment_time 3 -c copy out%03d.mp3
@@ -37,7 +39,7 @@ module.exports = async function generatePlayLists(config) {
     name: path.basename(inputFileName),
     duration,
     playlists: {
-      flac: chunkNames(FLAC, numberOfChunks, outputBaseName),
+      [FLAC]: chunkNames(FLAC, numberOfChunks, outputBaseName),
     },
   };
 
@@ -54,7 +56,7 @@ module.exports = async function generatePlayLists(config) {
     const opusBitrateSettings = {
       ...config,
       bitrate,
-      codec: "opus",
+      codec: OPUS,
       numberOfChannels,
       outputFormatExtension: defaults.outputFormatExtension,
     };
