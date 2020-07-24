@@ -9,11 +9,11 @@ const createPlaylists = require(createPlaylistFolder + "index");
 
 const testFolder = path.join(createPlaylistFolder, "/test/");
 const { OUTPUT_MEDIA_FOLDER } = require(testFolder + "config");
-const testMediaFolder = path.join(testFolder, "/media/");
-const outputMediaFolder = path.join(testMediaFolder, OUTPUT_MEDIA_FOLDER);
+const inputPath = path.join(testFolder, "./media/");
+const targetPath = path.join(inputPath, OUTPUT_MEDIA_FOLDER);
 
 const getChunkData = serveAudio({
-  mediaFolder: outputMediaFolder,
+  mediaFolder: targetPath,
   cacheLifetime: 2,
 });
 
@@ -22,21 +22,25 @@ describe("Serve audio", () => {
   afterEach(resetTestFolder);
 
   it("Should serve the expected audio chunk", async () => {
-    const ID = "long_input_44100_000.flac";
-
-    await createPlaylists(testMediaFolder, outputMediaFolder);
-    const expected = await fs.readFile(path.join(outputMediaFolder, ID));
+    const ID = "long_input_44100_192k_000.mp3";
+    const bitrates = [
+      { codec: "libmp3lame", bitrate: "192k", extension: "mp3" },
+    ];
+    await createPlaylists({ inputPath, targetPath, bitrates });
+    const expected = await fs.readFile(path.join(targetPath, ID));
     const output = await getChunkData(ID);
     assert.equal(output.toString().length > 0, true);
     assert.equal(output.toString(), expected.toString());
   });
 
   it("Should cache audio chunks", async () => {
-    const ID = "long_input_44100_000.flac";
+    const ID = "long_input_44100_1411k_000.flac";
 
-    await createPlaylists(testMediaFolder, outputMediaFolder);
+    const bitrates = [{ codec: "flac", bitrate: "1411k", extension: "flac" }];
+
+    await createPlaylists({ inputPath, targetPath, bitrates });
     const start = Date.now();
-    const expected = await fs.readFile(path.join(outputMediaFolder, ID));
+    const expected = await fs.readFile(path.join(targetPath, ID));
     const fileReadTime = Date.now() - start;
     const output = await getChunkData(ID);
     const firstGetCall = Date.now() - fileReadTime - start;
