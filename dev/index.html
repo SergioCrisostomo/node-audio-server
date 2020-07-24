@@ -4,13 +4,44 @@
     <meta charset="utf-8" />
     <title>EME test</title>
     <link rel="icon" type="image/png" href="data:image/png;base64,ggg==" />
+
+    <style>
+      .controls-wrapper {
+        width: 80%;
+        height: 30px;
+        display: flex;
+      }
+      .toggle-button {
+        width: 60px;
+        height: 100%;
+        margin-right: 10px;
+        background-color: #def;
+        padding: 5px;
+        box-sizing: border-box;
+        text-transform: capitalize;
+      }
+      .progress-bar {
+        height: 3px;
+        background-color: #333;
+        position: relative;
+        flex: 1;
+        margin-top: 13px;
+      }
+      .progress-slider {
+        width: 9px;
+        height: 9px;
+        border-radius: 5px;
+        background-color: blue;
+        position: absolute;
+        left: -4px;
+        top: -3px;
+      }
+    </style>
   </head>
   <body>
     <h1>Node audio server</h1>
     <h3>Dev environment</h3>
-    <div id="buttons"></div>
-    <p id="info"></p>
-    <audio crossorigin="anonymous" controls></audio>
+    <div class="audio-player-container"></div>
     <script type="module" src="/index.mjs"></script>
   </body>
 </html>
