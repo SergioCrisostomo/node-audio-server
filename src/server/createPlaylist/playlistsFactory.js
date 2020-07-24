@@ -4,22 +4,31 @@ const spawn = require("child_process").spawn;
 const getFileDuration = require("./getFileDuration");
 const generateChunks = require("./generateChunks");
 
-const defaults = require("./defaults");
+const { digitsInName } = require("./defaults");
 
-const FLAC = "flac"; // 1411.2 kbps
-const OPUS = "opus";
 const DEBUG = false;
 
-const chunkNames = (codec, numberOfChunks, outputBaseName) =>
+const makePlaylist = ({
+  extension,
+  bitrate,
+  numberOfChunks,
+  outputBaseName,
+  duration,
+}) =>
   [...Array(numberOfChunks)].map((_, i) => {
-    const chunkBaseName = path.basename(outputBaseName);
-    const index = ("0".repeat(defaults.digitsInName) + i).slice(
-      -defaults.digitsInName
-    );
-    return `${chunkBaseName}_${index}.${codec}`;
+    const name = (() => {
+      const chunkBaseName = path.basename(outputBaseName);
+      const index = ("0".repeat(digitsInName) + i).slice(-digitsInName);
+      return `${chunkBaseName}_${bitrate}_${index}.${extension}`;
+    })();
+
+    return {
+      name,
+      bitrate,
+      duration,
+    };
   });
 
-// ffmpeg -i somefile.mp3 -f segment -segment_time 3 -c copy out%03d.mp3
 // ffmpeg -i input.wav -vn -ar 44100 -ac 2 -b:a 192k output.mp3
 module.exports = async function generatePlayLists(config) {
   const {
@@ -38,35 +47,23 @@ module.exports = async function generatePlayLists(config) {
   const manifest = {
     name: path.basename(inputFileName),
     duration,
-    playlists: {
-      [FLAC]: chunkNames(FLAC, numberOfChunks, outputBaseName),
-    },
+    playlists: {},
   };
 
-  const flacSettings = {
-    ...config,
-    numberOfChannels,
-    outputFormatExtension: FLAC,
-  };
-  if (DEBUG) console.log("Would process", bitrate, settings);
-
-  await generateChunks(flacSettings);
-
-  const generators = bitrates.map((bitrate) => {
+  const generators = bitrates.map((bitrateSettings) => {
     const opusBitrateSettings = {
       ...config,
-      bitrate,
-      codec: OPUS,
+      ...bitrateSettings,
       numberOfChannels,
-      outputFormatExtension: defaults.outputFormatExtension,
     };
     // console.log("Would process", bitrate, settings);
 
-    manifest.playlists[bitrate] = chunkNames(
-      defaults.outputFormatExtension,
+    manifest.playlists[bitrateSettings.bitrate] = makePlaylist({
+      ...bitrateSettings,
+      duration,
       numberOfChunks,
-      outputBaseName
-    );
+      outputBaseName,
+    });
     return generateChunks(opusBitrateSettings);
   });
 

@@ -8,8 +8,14 @@ const getFiles = require("../src/server/utils/getFiles");
 
 const mediaFolder = path.join(__dirname, "media/output");
 api
-  .createPlaylist(path.join(__dirname, "media"), mediaFolder, {
+  .createPlaylist({
+    inputPath: path.join(__dirname, "media"),
+    targetPath: mediaFolder,
     segmentTime: 5,
+    bitrates: [
+      { codec: "libmp3lame", bitrate: "192k", extension: "mp3" },
+      { codec: "libmp3lame", bitrate: "8k", extension: "mp3" },
+    ],
   })
   .catch((err) => console.log("::: createPlaylist failed", err));
 
@@ -50,4 +56,11 @@ const server = app.listen(3000, () => {
   const host = server.address().address;
   const port = server.address().port;
   console.log("App listening at http://%s:%s", host, port);
+});
+process.on("SIGINT", async () => {
+  console.info("SIGINT signal received. Deleting generated files.");
+  const dir = path.join(__dirname, "/media/output/");
+  await fs.rmdir(dir, { recursive: true });
+  await fs.mkdir(dir);
+  process.exit(0);
 });

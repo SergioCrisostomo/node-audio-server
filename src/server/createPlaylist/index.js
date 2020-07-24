@@ -3,12 +3,23 @@ const fs = require("fs").promises;
 const getFiles = require("../utils/getFiles");
 const WaveFile = require("wavefile").WaveFile;
 const playlistsFactory = require("./playlistsFactory");
-const defaults = require("./defaults");
+const { digitsInName, segmentTime, frequencyRate } = require("./defaults");
 
 const DEBUG = false;
 
-module.exports = async (originPath, targetPath, options = {}) => {
-  const wavFiles = await getFiles(originPath, "wav");
+const requiredOptions = ["inputPath", "targetPath", "bitrates"];
+
+module.exports = async (options = {}) => {
+  for (const option of requiredOptions) {
+    if (typeof options[option] === "undefined") {
+      console.error("Missing option ", option);
+      return;
+    }
+  }
+
+  const { inputPath, targetPath } = options;
+
+  const wavFiles = await getFiles(inputPath, "wav");
 
   const generators = wavFiles.map(async (inputFileName) => {
     if (DEBUG) console.log(inputFileName);
@@ -22,12 +33,11 @@ module.exports = async (originPath, targetPath, options = {}) => {
     );
 
     const config = {
-      segmentTime: defaults.segmentTime,
+      segmentTime,
       numberOfChannels,
-      frequencyRate: defaults.frequencyRate,
+      frequencyRate,
       inputFileName,
       outputBaseName,
-      bitrates: defaults.bitrates,
       ...options,
     };
     return await playlistsFactory(config);

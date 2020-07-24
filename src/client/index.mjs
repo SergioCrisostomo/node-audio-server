@@ -15,7 +15,7 @@ if (MediaSource.isTypeSupported(mimeType)) {
     const manifest = await fetch("/media/long_input_44100.wav").then((res) =>
       res.json()
     );
-    const flacChunks = manifest.playlists.flac;
+    const flacChunks = manifest.playlists["192k"];
     let count = 0;
 
     sourceBuffer.addEventListener("updateend", function () {
@@ -27,7 +27,7 @@ if (MediaSource.isTypeSupported(mimeType)) {
     const addChunk = (next) => {
       if (!next) return;
 
-      fetch("/chunk/" + next)
+      fetch("/chunk/" + next.name)
         .then((res) => res.arrayBuffer())
         .then((data) => {
           sourceBuffer.appendBuffer(data);
