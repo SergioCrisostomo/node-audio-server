@@ -93,6 +93,7 @@ export default class Player {
     fetch("/chunk/" + next.name)
       .then((res) => res.arrayBuffer())
       .then((data) => {
+        next.data = data;
         this.sourceBuffer.appendBuffer(data);
       });
   }
