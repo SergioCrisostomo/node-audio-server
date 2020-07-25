@@ -37,7 +37,7 @@ export default class Player {
     const progressBar = elFrom("div", ".progress-bar", controlsWrapper);
     this.progressSlider = elFrom("div", ".progress-slider", progressBar);
 
-    this.toggleButton.addEventListener("click", this.onToggle);
+    this.toggleButton.addEventListener("click", () => this.onToggle());
     window.addEventListener(
       "keydown",
       (e) => e.code === "Space" && this.onToggle()
