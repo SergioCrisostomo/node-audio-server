@@ -13,6 +13,7 @@ const clamp = (min, nr, max) => Math.min(Math.max(nr, min), max);
 const PLAY = "play";
 const PAUSE = "pause";
 const SLIDER_CORRECTION = 4; // just so the circle of the slider gets its center in the edges
+const HARD_CODED_PLAYLIST = "192k";
 
 export default class Player {
   constructor(el, options) {
@@ -23,6 +24,8 @@ export default class Player {
     this.manifest = null;
     this.loadingChunks = [];
     this.sourceBuffer = null;
+    this.mediaSource = null;
+    this.loadingChunk = false;
 
     this.state = PAUSE; // playing || paused
     this.currentTime = 0; // seconds
@@ -63,11 +66,43 @@ export default class Player {
   };
 
   onTimeUpdate = (e) => {
+    this.currentTime = this.audio.currentTime;
+
     this.updateSliderPosition();
+
+    this.checkBufferLoad();
+  };
+
+  checkBufferLoad = () => {
+    if (this.loadingChunk) return;
+    const playlist = this.manifest.playlists[HARD_CODED_PLAYLIST];
+    const allDataLoaded = playlist.every((chunk) => chunk.data);
+    if (allDataLoaded) return;
+    let currentBufferLength = 0;
+    let loadedChunks = 0;
+    let next = null;
+
+    for (let chunk of playlist) {
+      next = chunk;
+      if (!chunk.data) break;
+      loadedChunks++;
+      currentBufferLength += chunk.segmentTime;
+    }
+    const averageChunkLength = loadedChunks / currentBufferLength;
+    const bufferLeft = currentBufferLength - this.currentTime;
+    const bufferIsTooShort = bufferLeft < Math.max(averageChunkLength, 5);
+
+    if (bufferIsTooShort) {
+      this.loadChunk(next);
+    }
+    /*
+    if (!this.sourceBuffer.updating && this.mediaSource.readyState === "open") {
+      this.loadChunk(this.loadingChunks.shift());
+    }
+    */
   };
 
   updateSliderPosition = () => {
-    this.currentTime = this.audio.currentTime;
     const duration = this.manifest.duration / 1000;
     const position =
       (this.currentTime *
@@ -79,6 +114,7 @@ export default class Player {
   };
 
   onChunkLoad = (playlist) => {
+    this.loadingChunk = false;
     // calculate chunk width
     const chunkWidth =
       ((this.manifest.duration / this.manifest.chunkDuration) * 100) /
@@ -96,8 +132,8 @@ export default class Player {
 
   async setPlaylist(manifestUrl) {
     this.loadingChunks = [];
-    const mediaSource = new MediaSource();
-    this.audio.src = URL.createObjectURL(mediaSource);
+    this.mediaSource = new MediaSource();
+    this.audio.src = URL.createObjectURL(this.mediaSource);
 
     const fetchManifest = fetch(manifestUrl)
       .then((res) => res.json())
@@ -107,27 +143,25 @@ export default class Player {
       })
       .catch((err) => console.log("Error loading manifest", manifestUrl));
 
-    mediaSource.addEventListener("sourceopen", async () => {
+    this.mediaSource.addEventListener("sourceopen", async () => {
       URL.revokeObjectURL(this.audio.src);
       const mimeType = "audio/mpeg";
-      this.sourceBuffer = mediaSource.addSourceBuffer(mimeType);
+      this.sourceBuffer = this.mediaSource.addSourceBuffer(mimeType);
       await fetchManifest;
 
-      const playlist = this.manifest.playlists["192k"]; // TODO: hard coded for now
+      const playlist = this.manifest.playlists[HARD_CODED_PLAYLIST];
       this.loadingChunks = playlist.slice();
       this.loadChunk(this.loadingChunks.shift());
 
       this.sourceBuffer.addEventListener("updateend", () => {
         this.onChunkLoad(playlist);
-        if (!this.sourceBuffer.updating && mediaSource.readyState === "open") {
-          this.loadChunk(this.loadingChunks.shift());
-        }
       });
     });
   }
 
   loadChunk(next) {
     if (!next) return;
+    this.loadingChunk = true;
 
     fetch("/chunk/" + next.name)
       .then((res) => res.arrayBuffer())
