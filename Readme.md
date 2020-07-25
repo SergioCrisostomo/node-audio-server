@@ -20,10 +20,11 @@ This project aims to create a server and client for serving audio between Node.j
 - [x] test consuming sequential chunks using MSE api
 - [ ] client side player with basic functionality
   - [ ] load chunks on demand (no need to download all chunks if the player is paused)
+  - [ ] show what parts are downloaded in the progress bar
   - [ ] enable seek
-  - [ ] use different bitrates depending on network performance
-  - [ ] audio play tracking and more DRM analytics
 - [ ] enable encryption in server-client audio data
+- [ ] use different bitrates depending on network performance
+- [ ] audio play tracking and more DRM analytics
 
 ## How to contribute:
 
