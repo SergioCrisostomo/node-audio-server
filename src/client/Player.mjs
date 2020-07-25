@@ -19,9 +19,11 @@ export default class Player {
     this.wrapper = el;
     this.audio = elFrom("audio", null, el);
     this.options = options;
+
     this.manifest = null;
     this.loadingChunks = [];
     this.sourceBuffer = null;
+
     this.state = PAUSE; // playing || paused
     this.currentTime = 0; // seconds
 
@@ -34,8 +36,8 @@ export default class Player {
   mount() {
     const controlsWrapper = elFrom("div", ".controls-wrapper", this.wrapper);
     this.toggleButton = elFrom("div", ".toggle-button", controlsWrapper);
-    const progressBar = elFrom("div", ".progress-bar", controlsWrapper);
-    this.progressSlider = elFrom("div", ".progress-slider", progressBar);
+    this.progressBar = elFrom("div", ".progress-bar", controlsWrapper);
+    this.progressSlider = elFrom("div", ".progress-slider", this.progressBar);
 
     this.toggleButton.addEventListener("click", () => this.onToggle());
     window.addEventListener(
@@ -44,20 +46,53 @@ export default class Player {
     );
     this.toggleButton.textContent = PLAY;
     this.progressSlider.addEventListener("pointerdown", this.onPointerDown);
-    this.sliderCoordinates = progressBar.getBoundingClientRect();
+    this.sliderCoordinates = this.progressBar.getBoundingClientRect();
 
-    this.audio.addEventListener("timeupdate", (e) => {
-      this.currentTime = this.audio.currentTime;
-      const duration = this.manifest.duration / 1000;
-      const position =
-        (this.currentTime *
-          (this.sliderCoordinates.width +
-            SLIDER_CORRECTION +
-            SLIDER_CORRECTION)) /
-        duration;
-      this.progressSlider.style.left = position + "px";
-    });
+    this.audio.addEventListener("timeupdate", this.onTimeUpdate);
   }
+
+  mountChunkAvailability = () => {
+    [...Array(this.manifest.numberOfChunks)].forEach((_, i) => {
+      const el = elFrom("div", ".unloaded-chunk.chunk-state", this.progressBar);
+      const chunkWidth =
+        (this.manifest.chunkDuration * 100) / (this.manifest.duration / 1000);
+
+      el.style.left = chunkWidth * i + "%";
+      el.style.width = chunkWidth + "%";
+    });
+  };
+
+  onTimeUpdate = (e) => {
+    this.updateSliderPosition();
+  };
+
+  updateSliderPosition = () => {
+    this.currentTime = this.audio.currentTime;
+    const duration = this.manifest.duration / 1000;
+    const position =
+      (this.currentTime *
+        (this.sliderCoordinates.width +
+          SLIDER_CORRECTION +
+          SLIDER_CORRECTION)) /
+      duration;
+    this.progressSlider.style.left = position + "px";
+  };
+
+  onChunkLoad = (playlist) => {
+    // calculate chunk width
+    const chunkWidth =
+      ((this.manifest.duration / this.manifest.chunkDuration) * 100) /
+      this.manifest.duration;
+
+    [...this.progressBar.querySelectorAll(".chunk-state")].forEach(
+      (el, i, arr) => {
+        const chunkIsLoaded = Boolean(playlist[i].data);
+        el.classList.toggle("unloaded-chunk", !chunkIsLoaded);
+        el.classList.toggle("loaded-chunk", chunkIsLoaded);
+        //      if (i < arr.length) el.style.width = chunkWidth + "%";
+      }
+    );
+  };
 
   async setPlaylist(manifestUrl) {
     this.loadingChunks = [];
@@ -66,7 +101,10 @@ export default class Player {
 
     const fetchManifest = fetch(manifestUrl)
       .then((res) => res.json())
-      .then((manifest) => (this.manifest = manifest))
+      .then((manifest) => {
+        this.manifest = manifest;
+        this.mountChunkAvailability();
+      })
       .catch((err) => console.log("Error loading manifest", manifestUrl));
 
     mediaSource.addEventListener("sourceopen", async () => {
@@ -80,6 +118,7 @@ export default class Player {
       this.loadChunk(this.loadingChunks.shift());
 
       this.sourceBuffer.addEventListener("updateend", () => {
+        this.onChunkLoad(playlist);
         if (!this.sourceBuffer.updating && mediaSource.readyState === "open") {
           this.loadChunk(this.loadingChunks.shift());
         }
