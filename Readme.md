@@ -8,7 +8,7 @@ This project aims to create a server and client for serving audio between Node.j
 
 (more details soon)
 
-- `createPlaylist` - method to create playlists (audio file chunks) and a `.json` manifest file. This serves the same purpose as a DASH `.mpd` file or a HLS `.m3u8` file.
+- `createPlaylist` - method to create playlists, ie generate audio files and a `.json` manifest file). The `.json` file serves the same purpose as a DASH `.mpd` file or a HLS `.m3u8` file.
 - `serveAudio` - function to get audio chunks with a very basic cache layer
 - `startServer` - Not implemented yet. A node.js server implementation to serve audio.
 - `player` - Not implemented yet, work in progress. Client side player.
