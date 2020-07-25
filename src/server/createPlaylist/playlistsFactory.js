@@ -26,6 +26,8 @@ const makePlaylist = ({
       name,
       bitrate,
       duration,
+      chunkIndex: i,
+      data: null, // can be added in client
     };
   });
 
@@ -46,6 +48,8 @@ module.exports = async function generatePlayLists(config) {
 
   const manifest = {
     name: path.basename(inputFileName),
+    chunkDuration: segmentTime,
+    numberOfChunks,
     duration,
     playlists: {},
   };
