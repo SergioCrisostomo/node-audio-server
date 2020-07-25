@@ -25,6 +25,7 @@ This project aims to create a server and client for serving audio between Node.j
 - [ ] enable encryption in server-client audio data
 - [ ] use different bitrates depending on network performance
 - [ ] audio play tracking and more DRM analytics
+- [ ] use flac and opus (currently only .mp3 is working)
 
 ## How to contribute:
 
