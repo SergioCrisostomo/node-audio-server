@@ -22,7 +22,6 @@ export default class Player {
     this.options = options;
 
     this.manifest = null;
-    this.loadingChunks = [];
     this.sourceBuffer = null;
     this.mediaSource = null;
     this.loadingChunk = false;
@@ -93,13 +92,13 @@ export default class Player {
     const bufferIsTooShort = bufferLeft < Math.max(averageChunkLength, 5);
 
     if (bufferIsTooShort) {
-      this.loadChunk(next);
+      if (
+        !this.sourceBuffer.updating &&
+        this.mediaSource.readyState === "open"
+      ) {
+        this.loadChunk(next);
+      }
     }
-    /*
-    if (!this.sourceBuffer.updating && this.mediaSource.readyState === "open") {
-      this.loadChunk(this.loadingChunks.shift());
-    }
-    */
   };
 
   updateSliderPosition = () => {
@@ -125,13 +124,11 @@ export default class Player {
         const chunkIsLoaded = Boolean(playlist[i].data);
         el.classList.toggle("unloaded-chunk", !chunkIsLoaded);
         el.classList.toggle("loaded-chunk", chunkIsLoaded);
-        //      if (i < arr.length) el.style.width = chunkWidth + "%";
       }
     );
   };
 
   async setPlaylist(manifestUrl) {
-    this.loadingChunks = [];
     this.mediaSource = new MediaSource();
     this.audio.src = URL.createObjectURL(this.mediaSource);
 
@@ -150,8 +147,7 @@ export default class Player {
       await fetchManifest;
 
       const playlist = this.manifest.playlists[HARD_CODED_PLAYLIST];
-      this.loadingChunks = playlist.slice();
-      this.loadChunk(this.loadingChunks.shift());
+      this.loadChunk(playlist.slice().shift());
 
       this.sourceBuffer.addEventListener("updateend", () => {
         this.onChunkLoad(playlist);
