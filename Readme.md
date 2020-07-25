@@ -13,6 +13,10 @@ This project aims to create a server and client for serving audio between Node.j
 - `startServer` - Not implemented yet. A node.js server implementation to serve audio.
 - `player` - Not implemented yet, work in progress. Client side player.
 
+## Where the project is at now:
+
+Creating a prototype (PoC) player with some of the Roadmap functionality. WIP.
+
 ## Roadmap:
 
 - [x] generate playlists with different bitrates from WAV files
