@@ -77,26 +77,25 @@ export default class Player {
     const playlist = this.manifest.playlists[HARD_CODED_PLAYLIST];
     const allDataLoaded = playlist.every((chunk) => chunk.data);
     if (allDataLoaded) return;
-    let currentBufferLength = 0;
-    let loadedChunks = 0;
-    let next = null;
+    const chunkLength = playlist[0].segmentTime;
 
-    for (let chunk of playlist) {
-      next = chunk;
-      if (!chunk.data) break;
-      loadedChunks++;
-      currentBufferLength += chunk.segmentTime;
-    }
-    const averageChunkLength = loadedChunks / currentBufferLength;
-    const bufferLeft = currentBufferLength - this.currentTime;
-    const bufferIsTooShort = bufferLeft < Math.max(averageChunkLength, 5);
+    const futureNotLoadedChunkIndex = playlist.findIndex((chunk, i) => {
+      const chunkstartTime = chunkLength * i;
+      return chunkstartTime > this.currentTime && !chunk.data;
+    });
+    const nearestUnloadedChunkStartTime =
+      futureNotLoadedChunkIndex * chunkLength;
+
+    const remainingBufferToUse =
+      nearestUnloadedChunkStartTime - this.currentTime;
+    const bufferIsTooShort = remainingBufferToUse < Math.max(chunkLength, 5);
 
     if (bufferIsTooShort) {
       if (
         !this.sourceBuffer.updating &&
         this.mediaSource.readyState === "open"
       ) {
-        this.loadChunk(next);
+        this.loadChunk(playlist[futureNotLoadedChunkIndex]);
       }
     }
   };
@@ -169,7 +168,10 @@ export default class Player {
 
   onToggle = (force) => {
     this.state = force || (this.state === PAUSE ? PLAY : PAUSE);
-    this.toggleButton.textContent = this.state !== PAUSE ? PLAY : PAUSE;
+    this.toggleButton.textContent = this.state === PAUSE ? PLAY : PAUSE;
+
+    if (this.state === PLAY) this.checkBufferLoad();
+    if (this.state === PAUSE && this.audio.paused === true) return;
 
     this.audio[this.state](); // play|pause
   };
