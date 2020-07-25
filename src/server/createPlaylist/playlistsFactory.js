@@ -13,7 +13,7 @@ const makePlaylist = ({
   bitrate,
   numberOfChunks,
   outputBaseName,
-  duration,
+  segmentTime,
 }) =>
   [...Array(numberOfChunks)].map((_, i) => {
     const name = (() => {
@@ -25,7 +25,7 @@ const makePlaylist = ({
     return {
       name,
       bitrate,
-      duration,
+      segmentTime,
       chunkIndex: i,
       data: null, // can be added in client
     };
@@ -67,6 +67,7 @@ module.exports = async function generatePlayLists(config) {
       duration,
       numberOfChunks,
       outputBaseName,
+      segmentTime,
     });
     return generateChunks(opusBitrateSettings);
   });
