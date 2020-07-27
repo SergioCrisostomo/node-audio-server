@@ -94,7 +94,10 @@ export default class Player {
         !this.sourceBuffer.updating &&
         this.mediaSource.readyState === "open"
       ) {
-        this.loadChunk(playlist[futureNotLoadedChunkIndex]);
+        this.loadChunk(
+          playlist[futureNotLoadedChunkIndex],
+          nearestUnloadedChunkStartTime
+        );
       }
     }
   };
@@ -146,7 +149,7 @@ export default class Player {
       await fetchManifest;
 
       const playlist = this.manifest.playlists[HARD_CODED_PLAYLIST];
-      this.loadChunk(playlist.slice().shift());
+      this.loadChunk(playlist.slice().shift(), 0);
 
       this.sourceBuffer.addEventListener("updateend", () => {
         this.onChunkLoad(playlist);
@@ -162,7 +165,7 @@ export default class Player {
       .then((res) => res.arrayBuffer())
       .then((data) => {
         next.data = data;
-        if (timestampOffset) {
+        if (typeof timestampOffset !== "undefined") {
           this.sourceBuffer.timestampOffset = timestampOffset;
         }
         this.sourceBuffer.appendBuffer(data);
@@ -236,7 +239,6 @@ export default class Player {
 
       this.whenBufferUpdateEndCallbacks.push(() => {
         this.audio.currentTime = newCurrentTime;
-        //- firstChunkInNewSegment.segmentTime;
         this.onTimeUpdate();
       });
 
