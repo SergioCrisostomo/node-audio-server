@@ -22,14 +22,18 @@ Creating a prototype (PoC) player with some of the Roadmap functionality. WIP.
 - [x] generate playlists with different bitrates from WAV files
 - [x] middleware to serve audio chunks
 - [x] test consuming sequential chunks using MSE api
-- [ ] client side player with basic functionality
-  - [ ] load chunks on demand (no need to download all chunks if the player is paused)
+- [x] client side player with basic functionality (prototype)
+  - [x] load chunks on demand (no need to download all chunks if the player is paused)
   - [x] show what parts are downloaded in the progress bar
-  - [ ] enable seek
+  - [x] enable seek
 - [ ] enable encryption in server-client audio data
 - [ ] use different bitrates depending on network performance
 - [ ] audio play tracking and more DRM analytics
 - [ ] use flac and opus (currently only .mp3 is working)
+- [ ] client side player
+  - [ ] in React
+  - [ ] in Vue.js
+  - [ ] vanilla js
 
 ## How to contribute:
 
