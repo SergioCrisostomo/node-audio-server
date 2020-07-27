@@ -25,6 +25,7 @@ export default class Player {
     this.sourceBuffer = null;
     this.mediaSource = null;
     this.loadingChunk = false;
+    this.whenBufferUpdateEndCallbacks = [];
 
     this.state = PAUSE; // playing || paused
     this.currentTime = 0; // seconds
@@ -66,9 +67,7 @@ export default class Player {
 
   onTimeUpdate = (e) => {
     this.currentTime = this.audio.currentTime;
-
     this.updateSliderPosition();
-
     this.checkBufferLoad();
   };
 
@@ -103,12 +102,10 @@ export default class Player {
   updateSliderPosition = () => {
     const duration = this.manifest.duration / 1000;
     const position =
-      (this.currentTime *
-        (this.sliderCoordinates.width +
-          SLIDER_CORRECTION +
-          SLIDER_CORRECTION)) /
+      (this.currentTime * (this.sliderCoordinates.width + SLIDER_CORRECTION)) /
       duration;
     this.progressSlider.style.left = position + "px";
+    this.updateSliderTime;
   };
 
   onChunkLoad = (playlist) => {
@@ -125,6 +122,9 @@ export default class Player {
         el.classList.toggle("loaded-chunk", chunkIsLoaded);
       }
     );
+
+    this.whenBufferUpdateEndCallbacks.forEach((fn) => fn());
+    this.whenBufferUpdateEndCallbacks = [];
   };
 
   async setPlaylist(manifestUrl) {
@@ -154,7 +154,7 @@ export default class Player {
     });
   }
 
-  loadChunk(next) {
+  loadChunk(next, timestampOffset) {
     if (!next) return;
     this.loadingChunk = true;
 
@@ -162,7 +162,14 @@ export default class Player {
       .then((res) => res.arrayBuffer())
       .then((data) => {
         next.data = data;
+        if (timestampOffset) {
+          this.sourceBuffer.timestampOffset = timestampOffset;
+        }
         this.sourceBuffer.appendBuffer(data);
+
+        // We've loaded all available segments, so tell MediaSource there are
+        // no more buffers which will be appended.
+        // TODO: mediaSource.endOfStream();
       });
   }
 
@@ -189,10 +196,10 @@ export default class Player {
     const sliderPosition = e.clientX - this.sliderCoordinates.left;
     this.progressSlider.style.left =
       clamp(
-        -SLIDER_CORRECTION,
+        -SLIDER_CORRECTION / 2,
         sliderPosition,
         this.sliderCoordinates.right -
-          SLIDER_CORRECTION -
+          SLIDER_CORRECTION / 2 -
           this.sliderPointerDown
       ) + "px";
   };
@@ -203,8 +210,40 @@ export default class Player {
         (this.manifest.duration / 1000)) /
       this.sliderCoordinates.width;
 
-    this.currentTime = newCurrentTime;
-    this.audio.currentTime = this.currentTime;
+    const playlist = this.manifest.playlists[HARD_CODED_PLAYLIST];
+    const bufferIsCompleteUpToNewCurrentTime = playlist.every((chunk, i) => {
+      const chunkStartTime = chunk.segmentTime * i;
+      return chunkStartTime > newCurrentTime || chunk.data;
+    });
+
+    if (bufferIsCompleteUpToNewCurrentTime) {
+      this.currentTime = newCurrentTime;
+      this.audio.currentTime = this.currentTime;
+    } else {
+      // empty buffers and make some magic
+
+      // add buffers starting on the nearest
+      const firstChunkInNewSegment = playlist.find((chunk, i) => {
+        const chunkEndTime = chunk.segmentTime * (i + 1);
+        return chunkEndTime > newCurrentTime;
+      });
+
+      // set the player time relative to the new time
+      const segmentStartTime =
+        firstChunkInNewSegment.segmentTime * firstChunkInNewSegment.chunkIndex;
+      this.sliderTimeOffset = segmentStartTime;
+      const adjustedCurrentTime = newCurrentTime - segmentStartTime;
+
+      this.whenBufferUpdateEndCallbacks.push(() => {
+        this.audio.currentTime = newCurrentTime;
+        //- firstChunkInNewSegment.segmentTime;
+        this.onTimeUpdate();
+      });
+
+      // use or fetch buffers
+      const timestampOffset = segmentStartTime;
+      this.loadChunk(firstChunkInNewSegment, timestampOffset);
+    }
 
     this.progressSlider.classList.remove("dragging");
 
