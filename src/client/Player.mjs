@@ -75,8 +75,8 @@ export default class Player {
     this.updateSliderPosition();
     this.checkBufferLoad();
   };
-  updateTime = () => {
-    this.currentTime = this.audio.currentTime;
+  updateTime = (tempCurrentTime) => {
+    this.currentTime = tempCurrentTime || this.audio.currentTime;
 
     this.elapsedTimeEl.textContent =
       "Elapsed time: " + secToMMSS(this.currentTime);
@@ -219,7 +219,11 @@ export default class Player {
           SLIDER_CORRECTION / 2 -
           this.sliderPointerDown
       ) + "px";
-    this.updateTime();
+    const newCurrentTime =
+      (parseInt(this.progressSlider.style.left, 10) *
+        (this.manifest.duration / 1000)) /
+      this.sliderCoordinates.width;
+    this.updateTime(newCurrentTime);
   };
 
   onPointerUp = () => {
