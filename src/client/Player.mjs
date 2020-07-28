@@ -9,6 +9,8 @@ const elFrom = (tagId, classes = "", parent) => {
 };
 
 const clamp = (min, nr, max) => Math.min(Math.max(nr, min), max);
+const secToMMSS = (sec) =>
+  [sec / 60, sec % 60].map((nr) => ("0" + Math.floor(nr)).slice(-2)).join(":");
 
 const PLAY = "play";
 const PAUSE = "pause";
@@ -41,6 +43,9 @@ export default class Player {
     this.toggleButton = elFrom("div", ".toggle-button", controlsWrapper);
     this.progressBar = elFrom("div", ".progress-bar", controlsWrapper);
     this.progressSlider = elFrom("div", ".progress-slider", this.progressBar);
+    const timeDisplay = elFrom("div", ".time-display", this.wrapper);
+    this.elapsedTimeEl = elFrom("div", ".elapsed-time", timeDisplay);
+    this.remainingTimeEl = elFrom("div", ".remaining-time", timeDisplay);
 
     this.toggleButton.addEventListener("click", () => this.onToggle());
     window.addEventListener(
@@ -66,9 +71,18 @@ export default class Player {
   };
 
   onTimeUpdate = (e) => {
-    this.currentTime = this.audio.currentTime;
+    this.updateTime();
     this.updateSliderPosition();
     this.checkBufferLoad();
+  };
+  updateTime = () => {
+    this.currentTime = this.audio.currentTime;
+
+    this.elapsedTimeEl.textContent =
+      "Elapsed time: " + secToMMSS(this.currentTime);
+    this.remainingTimeEl.textContent =
+      "Remaining time: " +
+      secToMMSS(this.manifest.duration / 1000 - this.currentTime);
   };
 
   checkBufferLoad = () => {
@@ -205,6 +219,7 @@ export default class Player {
           SLIDER_CORRECTION / 2 -
           this.sliderPointerDown
       ) + "px";
+    this.updateTime();
   };
 
   onPointerUp = () => {
