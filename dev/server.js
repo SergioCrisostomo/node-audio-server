@@ -11,7 +11,7 @@ api
   .createPlaylist({
     inputPath: path.join(__dirname, "media"),
     targetPath: mediaFolder,
-    segmentTime: 5,
+    segmentTime: Infinity,
     bitrates: [
       { codec: "mp4", bitrate: "192k", extension: "mp4" },
       // { codec: "libmp3lame", bitrate: "8k", extension: "mp3" },

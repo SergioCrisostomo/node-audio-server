@@ -17,7 +17,8 @@ module.exports = async function generateChunks({
   bitrate,
   codec,
 }) {
-  const outputFileName = `${outputBaseName}_${bitrate}_%0${digitsInName}d.${extension}`;
+  const segmentIndex = segmentTime !== Infinity ? `%0${digitsInName}d` : "000";
+  const outputFileName = `${outputBaseName}_${bitrate}_${segmentIndex}.${extension}`;
   const codecs = {
     mp3: [],
     opus: ["-c:a", "libopus"],
@@ -30,8 +31,10 @@ module.exports = async function generateChunks({
     ["-ac", numberOfChannels],
     bitrate ? ["-b:a", bitrate] : null,
     codecs[codec],
-    ["-f", "segment"],
-    ["-segment_time", segmentTime],
+    segmentTime !== Infinity && [
+      ["-f", "segment"],
+      ["-segment_time", segmentTime],
+    ],
     outputFileName,
   ]
     .filter(Boolean)

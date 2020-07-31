@@ -18,7 +18,10 @@ const makePlaylist = ({
   [...Array(numberOfChunks)].map((_, i) => {
     const name = (() => {
       const chunkBaseName = path.basename(outputBaseName);
-      const index = ("0".repeat(digitsInName) + i).slice(-digitsInName);
+      const index =
+        segmentTime !== Infinity
+          ? ("0".repeat(digitsInName) + i).slice(-digitsInName)
+          : "000";
       return `${chunkBaseName}_${bitrate}_${index}.${extension}`;
     })();
 
@@ -44,7 +47,8 @@ module.exports = async function generatePlayLists(config) {
   const decimalDuration = await getFileDuration(inputFileName);
   const duration = Math.floor(decimalDuration * 1000); // rounded to ms
 
-  const numberOfChunks = Math.ceil(duration / 1000 / segmentTime);
+  const numberOfChunks =
+    segmentTime === Infinity ? 1 : Math.ceil(duration / 1000 / segmentTime);
 
   const manifest = {
     name: path.basename(inputFileName),
