@@ -199,7 +199,7 @@ export default class Player {
     if (this.state === PAUSE && this.audio.paused === true) return;
 
     const action = this.audio[this.state](); // play|pause
-    action.catch((err) =>
+    Promise.resolve(action).catch((err) =>
       console.log("Error changing to", this.state, "\n", err)
     );
   };
