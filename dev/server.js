@@ -13,8 +13,8 @@ api
     targetPath: mediaFolder,
     segmentTime: 5,
     bitrates: [
-      { codec: "libmp3lame", bitrate: "192k", extension: "mp3" },
-      { codec: "libmp3lame", bitrate: "8k", extension: "mp3" },
+      { codec: "mp4", bitrate: "192k", extension: "mp4" },
+      // { codec: "libmp3lame", bitrate: "8k", extension: "mp3" },
     ],
   })
   .catch((err) => console.log("::: createPlaylist failed", err));

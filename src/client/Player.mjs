@@ -16,6 +16,7 @@ const PLAY = "play";
 const PAUSE = "pause";
 const SLIDER_CORRECTION = 4; // just so the circle of the slider gets its center in the edges
 const HARD_CODED_PLAYLIST = "192k";
+const mimeType = 'audio/mp4; codecs="mp4a.40.2"';
 
 export default class Player {
   constructor(el, options) {
@@ -158,7 +159,7 @@ export default class Player {
 
     this.mediaSource.addEventListener("sourceopen", async () => {
       URL.revokeObjectURL(this.audio.src);
-      const mimeType = "audio/mpeg";
+      // const mimeType = "audio/mp4";
       this.sourceBuffer = this.mediaSource.addSourceBuffer(mimeType);
       await fetchManifest;
 
@@ -197,7 +198,10 @@ export default class Player {
     if (this.state === PLAY) this.checkBufferLoad();
     if (this.state === PAUSE && this.audio.paused === true) return;
 
-    this.audio[this.state](); // play|pause
+    const action = this.audio[this.state](); // play|pause
+    action.catch((err) =>
+      console.log("Error changing to", this.state, "\n", err)
+    );
   };
 
   onPointerDown = (e) => {
