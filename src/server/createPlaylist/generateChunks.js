@@ -23,6 +23,7 @@ module.exports = async function generateChunks({
     mp3: [],
     opus: ["-c:a", "libopus"],
     flac: null,
+    mp4: ["-c:a", "aac"],
   };
   const args = [
     ["-i", inputFileName],
