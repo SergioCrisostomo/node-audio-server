@@ -32,10 +32,7 @@ module.exports = async function generateChunks({
     ["-ac", numberOfChannels],
     bitrate ? ["-b:a", bitrate] : null,
     codecs[codec],
-    segmentTime !== Infinity && [
-      ["-f", "segment"],
-      ["-segment_time", segmentTime],
-    ],
+    segmentTime !== Infinity && ["-f", "segment", "-segment_time", segmentTime],
     outputFileName,
   ]
     .filter(Boolean)
