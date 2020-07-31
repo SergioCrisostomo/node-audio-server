@@ -60,7 +60,13 @@ const server = app.listen(3000, () => {
 process.on("SIGINT", async () => {
   console.info("SIGINT signal received. Deleting generated files.");
   const dir = path.join(__dirname, "/media/output/");
-  await fs.rmdir(dir, { recursive: true });
-  await fs.mkdir(dir);
+
+  try {
+    await fs.rmdir(dir, { recursive: true });
+    await fs.mkdir(dir);
+  } catch (e) {
+    console.log("Error after SIGINT was called", e);
+  }
+
   process.exit(0);
 });
