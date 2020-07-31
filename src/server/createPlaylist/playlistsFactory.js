@@ -52,7 +52,7 @@ module.exports = async function generatePlayLists(config) {
 
   const manifest = {
     name: path.basename(inputFileName),
-    chunkDuration: segmentTime,
+    chunkDuration: segmentTime === Infinity ? duration : segmentTime,
     numberOfChunks,
     duration,
     playlists: {},
