@@ -22,7 +22,7 @@ const makePlaylist = ({
         segmentTime !== Infinity
           ? ("0".repeat(digitsInName) + i).slice(-digitsInName)
           : "000";
-      return `${chunkBaseName}_${bitrate}_${index}.${extension}`;
+      return `${chunkBaseName}_${index}.${extension}`;
     })();
 
     return {
@@ -63,6 +63,7 @@ module.exports = async function generatePlayLists(config) {
       ...config,
       ...bitrateSettings,
       numberOfChannels,
+      duration,
     };
     // console.log("Would process", bitrate, settings);
 
