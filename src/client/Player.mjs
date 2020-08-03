@@ -176,10 +176,10 @@ export default class Player {
   loadChunk(next, timestampOffset) {
     if (!next) return;
     this.loadingChunk = true;
-    const encrypted = false;
+    const encrypted = true;
     const path =
       "/chunk/" +
-      (encrypted ? next.name.slice(0, -3) + "_encrypted.mp4" : next.name);
+      (encrypted ? next.name.slice(0, -4) + "_encrypted.mp4" : next.name);
     fetch(path)
       .then((res) => res.arrayBuffer())
       .then((data) => {

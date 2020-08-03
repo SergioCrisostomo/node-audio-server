@@ -95,7 +95,7 @@ const encryptFilesFFMPEG = (files) => {
       "a7e61c373e219033c21091fa607bf3b8",
       //["-f", "mp4"],
       fragment && [/*"-movflags", "dash", */ "-frag_duration", "10000"], // -movflags dash
-      file.slice(0, -3) + "_encrypted.mp4",
+      file.slice(0, -4) + "_encrypted.mp4",
     ]
       .filter(Boolean)
       .flat();
@@ -130,6 +130,6 @@ module.exports = async function generateChunks(options) {
       return Promise.all(renames)
         .catch((err) => console.log("Error renaming back files", err))
         .then(() => files);
-    });
-  // .then(encryptFilesFFMPEG);
+    })
+    .then(encryptFilesFFMPEG);
 };
