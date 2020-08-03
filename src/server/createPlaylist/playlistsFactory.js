@@ -63,6 +63,7 @@ module.exports = async function generatePlayLists(config) {
       ...config,
       ...bitrateSettings,
       numberOfChannels,
+      numberOfChunks,
       duration,
     };
     // console.log("Would process", bitrate, settings);
