@@ -130,6 +130,6 @@ module.exports = async function generateChunks(options) {
       return Promise.all(renames)
         .catch((err) => console.log("Error renaming back files", err))
         .then(() => files);
-    })
-    .then(encryptFilesFFMPEG);
+    });
+  // .then(encryptFilesFFMPEG);
 };
