@@ -3,6 +3,7 @@ const fs = require("fs").promises;
 const ffmpeg = require("./ffmpeg");
 const { digitsInName } = require("./defaults");
 const spawn = require("./utils/spawn");
+const { KEY, KID, IV } = require("../../../dev/testKeys.json");
 
 const DEBUG = false;
 const BLUE = "\x1b[34m";
@@ -90,9 +91,9 @@ const encryptFilesFFMPEG = (files) => {
       "-encryption_scheme",
       "cenc-aes-ctr",
       "-encryption_key",
-      "76a6c65c5ea762046bd749a2e632ccbb",
+      KEY,
       "-encryption_kid",
-      "a7e61c373e219033c21091fa607bf3b8",
+      KID,
       //["-f", "mp4"],
       fragment && [/*"-movflags", "dash", */ "-frag_duration", "10000"], // -movflags dash
       file.slice(0, -4) + "_encrypted.mp4",
@@ -101,6 +102,39 @@ const encryptFilesFFMPEG = (files) => {
       .flat();
 
     return ffmpeg(args, true);
+  });
+
+  return Promise.all(encryptions)
+    .then(() => {
+      return files.map((file) => file.slice(0, -3) + "mp4");
+    })
+    .catch((err) => console.log("Error encrypting files", err));
+};
+
+const encryptFilesBento4 = (files) => {
+  // https://stackoverflow.com/questions/45681264/how-to-build-xcode-project-from-the-command-line
+  // /Users/sergiocrisostomo/Library/Developer/Xcode/DerivedData/Bento4-cwwmyqadyamwvnfrwnsmlidmtxnm/Build/Products/Debug/mp4encrypt
+  // mp4encrypt --method MPEG-CENC --key 1:a0a1a2a3a4a5a6a7a8a9aaabacadaeaf:0123456789abcdef --property 1:KID:121a0fca0f1b475b8910297fa8e0a07e --key 2:a0a1a2a3a4a5a6a7a8a9aaabacadaeaf:aaaaaaaabbbbbbbb --property 2:KID:121a0fca0f1b475b8910297fa8e0a07e hbb_578kbps.mp4 hbb_578kbps-cenc.mp4
+  const bento4Path =
+    "/Users/sergiocrisostomo/Library/Developer/Xcode/DerivedData/Bento4-cwwmyqadyamwvnfrwnsmlidmtxnm/Build/Products/Debug/mp4encrypt";
+  // --key 1:7f412f0575f44f718259beef56ec7771:0a8d9e58502141c3 --property 1:KID:2fef8ad812df429783e9bf6e5e493e53
+
+  const encryptions = files.map((file) => {
+    const args = [
+      "--method",
+      "MPEG-CENC",
+      "--key",
+      `1:${KEY}:${IV}`,
+      "--property",
+      `1:KID:${KID}`,
+      ["--global-option", "mpeg-cenc.eme-pssh:true"],
+      file,
+      file.slice(0, -4) + "_encrypted.mp4",
+    ]
+      .filter(Boolean)
+      .flat();
+
+    return spawn([bento4Path, args], false);
   });
 
   return Promise.all(encryptions)
@@ -131,5 +165,5 @@ module.exports = async function generateChunks(options) {
         .catch((err) => console.log("Error renaming back files", err))
         .then(() => files);
     })
-    .then(encryptFilesFFMPEG);
+    .then(encryptFilesBento4);
 };

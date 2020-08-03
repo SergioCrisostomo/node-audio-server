@@ -18,6 +18,12 @@ const SLIDER_CORRECTION = 4; // just so the circle of the slider gets its center
 const HARD_CODED_PLAYLIST = "192k";
 const mimeType = 'audio/mp4; codecs="mp4a.40.2"';
 
+const { KEY, KID, iv } = {
+  KEY: "7f412f0575f44f718259beef56ec7771",
+  KID: "2fef8ad812df429783e9bf6e5e493e53",
+  IV: "random",
+};
+
 export default class Player {
   constructor(el, options) {
     this.wrapper = el;
@@ -280,66 +286,174 @@ export default class Player {
     window.removeEventListener("pointerup", this.onPointerUp);
   };
 }
+let ensurePromise;
+
+function EnsureMediaKeysCreated(el, keySystem, options, encryptedEvent) {
+  // We may already have a MediaKeys object if we initialized EME for a
+  // different MSE SourceBuffer's "encrypted" event, or the initialization
+  // may still be in progress.
+  if (ensurePromise) {
+    return ensurePromise;
+  }
+
+  console.log(
+    "navigator.requestMediaKeySystemAccess(" + JSON.stringify(options) + ")"
+  );
+
+  ensurePromise = navigator
+    .requestMediaKeySystemAccess(keySystem, options)
+    .then(
+      function (keySystemAccess) {
+        return keySystemAccess.createMediaKeys();
+      },
+      () => console.log("Failed to request key system access.")
+    )
+
+    .then(
+      function (mediaKeys) {
+        console.log("created MediaKeys object ok");
+        return el.setMediaKeys(mediaKeys);
+      },
+      () => console.log("failed to create MediaKeys object")
+    );
+
+  return ensurePromise;
+}
+
+// Convert Uint8Array into base64 using base64url alphabet, without padding.
+function toBase64(str) {
+  return btoa(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=*$/, "");
+}
+function ArrayBufferToString(arr) {
+  var str = "";
+  var view = new Uint8Array(arr);
+  for (var i = 0; i < view.length; i++) {
+    str += String.fromCharCode(view[i]);
+  }
+  return str;
+}
+
+function StringToArrayBuffer(str) {
+  var arr = new ArrayBuffer(str.length);
+  var view = new Uint8Array(arr);
+  for (var i = 0; i < str.length; i++) {
+    view[i] = str.charCodeAt(i);
+  }
+  return arr;
+}
+
+function Base64ToHex(str) {
+  var bin = window.atob(str.replace(/-/g, "+").replace(/_/g, "/"));
+  var res = "";
+  for (var i = 0; i < bin.length; i++) {
+    res += ("0" + bin.charCodeAt(i).toString(16)).substr(-2);
+  }
+  return res;
+}
+
+function HexToBase64(hex) {
+  var bin = "";
+  for (var i = 0; i < hex.length; i += 2) {
+    bin += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
+  }
+  return window
+    .btoa(bin)
+    .replace(/=/g, "")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_");
+}
 
 function attachEME(audio) {
   // Define a key: hardcoded in this example
   // – this corresponds to the key used for encryption
-
-  let config = [
+  const config = [
     {
-      // initDataTypes: ["cenc", "keyids"], // keyids, cenc
+      initDataTypes: ["cenc"], // keyids, cenc
       audioCapabilities: [{ contentType: mimeType }],
     },
   ];
-
-  audio.addEventListener("encrypted", handleEncrypted, false);
-
-  navigator
-    .requestMediaKeySystemAccess("org.w3.clearkey", config)
-    .then(function (keySystemAccess) {
-      console.log(".then(function (keySystemAccess)");
-      return keySystemAccess.createMediaKeys();
-    })
-    .then(function (createdMediaKeys) {
-      console.log(".then(function (createdMediaKeys)");
-      return audio.setMediaKeys(createdMediaKeys);
-    })
-    .catch(function (error) {
-      console.error("Failed to set up MediaKeys", error);
-    });
-
-  function handleEncrypted(event) {
-    console.log("handleEncrypted", event);
-    var session = audio.mediaKeys.createSession();
-    session.addEventListener("message", handleMessage, false);
-    session
-      .generateRequest(event.initDataType, event.initData)
-      .catch(function (error) {
-        console.error("Failed to generate a license request", error);
+  audio.sessions = [];
+  audio.addEventListener("encrypted", (ev) => {
+    EnsureMediaKeysCreated(audio, "org.w3.clearkey", config).then(() => {
+      console.log("ensured MediaKeys available on HTMLMediaElement");
+      const session = audio.mediaKeys.createSession();
+      audio.sessions.push(session);
+      session.addEventListener("message", handleMessage);
+      session.addEventListener("keystatuseschange", function KeysChange(event) {
+        const session = event.target;
+        console.log("keystatuseschange event on session" + session.sessionId);
+        const map = session.keyStatuses;
+        for (let entry of map.entries()) {
+          const keyId = entry[0];
+          const status = entry[1];
+          const base64KeyId = Base64ToHex(
+            window.btoa(ArrayBufferToString(keyId))
+          );
+          console.log(
+            "SessionId=" +
+              session.sessionId +
+              " keyId=" +
+              base64KeyId +
+              " status=" +
+              status
+          );
+        }
       });
-  }
 
-  function handleMessage(event) {
-    console.log("handleMessage", event);
+      return session
+        .generateRequest(ev.initDataType, ev.initData)
+        .catch(function (error) {
+          console.error("Failed to generate a license request", error);
+        });
+    });
+  });
+  var keys = {
+    "2fef8ad812df429783e9bf6e5e493e53": "7f412f0575f44f718259beef56ec7771",
+  };
+  function handleMessage(ev) {
     // If you had a license server, you would make an asynchronous XMLHttpRequest
     // with event.message as the body.  The response from the server, as a
     // Uint8Array, would then be passed to session.update().
     // Instead, we will generate the license synchronously on the client, using
     // the hard-coded KEY.
-    var license = generateLicense(event.message);
+    console.log("handleMessage", event);
+    var msgStr = ArrayBufferToString(ev.message);
+    console.log(" got message from CDM: " + msgStr);
 
-    var session = event.target;
-    session.update(license).catch(function (error) {
-      console.error("Failed to update the session", error);
+    var msg = JSON.parse(msgStr);
+    console.log("MSG", msg);
+    var outKeys = [];
+
+    for (var i = 0; i < msg.kids.length; i++) {
+      var id64 = msg.kids[i];
+      var idHex = Base64ToHex(msg.kids[i]).toLowerCase();
+      var key = keys[idHex];
+
+      if (key) {
+        console.log(" found key " + key + " for key id " + idHex);
+        outKeys.push({
+          kty: "oct",
+          alg: "A128KW",
+          kid: id64,
+          k: HexToBase64(key),
+        });
+      } else {
+        console.log(" couldn't find key for key id " + idHex);
+      }
+    }
+
+    var update = JSON.stringify({
+      keys: outKeys,
+      type: msg.type,
     });
-  }
+    console.log(" sending update message to CDM: " + update);
 
-  // Convert Uint8Array into base64 using base64url alphabet, without padding.
-  function toBase64(u8arr) {
-    return btoa(String.fromCharCode.apply(null, u8arr))
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=*$/, "");
+    ev.target.update(StringToArrayBuffer(update)).then(
+      function () {
+        console.log(" MediaKeySession update ok!");
+      },
+      () => console.log(" MediaKeySession update failed")
+    );
   }
 
   // This takes the place of a license server.
@@ -356,8 +470,8 @@ function attachEME(audio) {
     var keyObj = {
       kty: "oct",
       alg: "A128KW",
-      kid: "a7e61c373e219033c21091fa607bf3b8",
-      k: "76a6c65c5ea762046bd749a2e632ccbb",
+      kid: toBase64(KID),
+      k: toBase64(KEY),
     };
     return new TextEncoder().encode(
       JSON.stringify({
