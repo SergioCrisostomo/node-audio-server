@@ -2,7 +2,7 @@ const path = require("path");
 const fs = require("fs").promises;
 const ffmpeg = require("./ffmpeg");
 const { digitsInName } = require("./defaults");
-const spawn = require("child_process").spawn;
+const spawn = require("./utils/spawn");
 
 const DEBUG = false;
 const BLUE = "\x1b[34m";
@@ -42,9 +42,7 @@ const wavToSegmentedWav = (options) => {
 
   return ffmpeg(args)
     .then(() => {
-      const nrOfChunks = Math.ceil(duration / 1000 / segmentTime);
-
-      return [...Array(nrOfChunks)].map(
+      return [...Array(options.numberOfChunks)].map(
         (_, i) => `${outputBaseName}_${("00" + i).slice(-3)}.wav`
       );
     })
@@ -71,26 +69,45 @@ const wavSegmentsToMp4 = (files) => {
     .catch((err) => console.log("Error converting wavSegmentsToMp4", err));
 };
 
-const mp4ToFragmentedMp4 = (fileName) => {
-  console.log("fileName", fileName);
-  return new Promise(function (resolve, rej) {
+const mp4ToFragmentedMp4 = (files) => {
+  // framgment files
+  const processors = files.map((fileName) => {
     const args = ["-dash", "10000", "-frag", "10000", "-rap", fileName];
-    console.log(BLUE, "MP4Box", args.join(" "), BLACK);
+    return spawn(["MP4Box", args, { cwd: path.dirname(fileName) }], false);
+  });
+  return Promise.all(processors)
+    .then(() => files)
+    .catch((err) => console.log("Error using mp4ToFragmentedMp4", err));
+};
 
-    const proc = spawn("MP4Box", args, { cwd: path.dirname(fileName) });
-    let stderr = "\n::::::::::::::::::::::\n";
-    proc.stderr.on("data", function (data) {
-      stderr += "\n" + data;
-    });
+const encryptFilesFFMPEG = (files) => {
+  const encryptions = files.map((file) => {
+    const fragment = true;
+    const args = [
+      "-y",
+      "-i",
+      file,
+      "-encryption_scheme",
+      "cenc-aes-ctr",
+      "-encryption_key",
+      "76a6c65c5ea762046bd749a2e632ccbb",
+      "-encryption_kid",
+      "a7e61c373e219033c21091fa607bf3b8",
+      //["-f", "mp4"],
+      fragment && [/*"-movflags", "dash", */ "-frag_duration", "10000"], // -movflags dash
+      file.slice(0, -3) + "_encrypted.mp4",
+    ]
+      .filter(Boolean)
+      .flat();
 
-    proc.on("error", (err) => rej(err));
-    proc.on("close", function () {
-      if (DEBUG) console.log("Closing MP4Box process......");
-      stderr += "\n\n::::::::::::::::::::::\n";
-      if (DEBUG) console.log(RED, stderr, BLACK);
-      resolve();
-    });
-  }).catch((err) => console.log(err));
+    return ffmpeg(args, true);
+  });
+
+  return Promise.all(encryptions)
+    .then(() => {
+      return files.map((file) => file.slice(0, -3) + "mp4");
+    })
+    .catch((err) => console.log("Error encrypting files", err));
 };
 
 module.exports = async function generateChunks(options) {
@@ -101,13 +118,7 @@ module.exports = async function generateChunks(options) {
 
   return wavToSegmentedWav(options)
     .then(wavSegmentsToMp4)
-    .then((files) => {
-      // framgment files
-      const processors = files.map(mp4ToFragmentedMp4);
-      return Promise.all(processors)
-        .then(() => files)
-        .catch((err) => console.log("Error using mp4ToFragmentedMp4", err));
-    })
+    .then(mp4ToFragmentedMp4)
     .then((files) => {
       // rename files
       const renames = files.map((fileName) => {
@@ -116,8 +127,9 @@ module.exports = async function generateChunks(options) {
         return fs.rename(dashName, fileName);
       });
 
-      return Promise.all(renames).catch((err) =>
-        console.log("Error renaming back files", err)
-      );
-    });
+      return Promise.all(renames)
+        .catch((err) => console.log("Error renaming back files", err))
+        .then(() => files);
+    })
+    .then(encryptFilesFFMPEG);
 };
