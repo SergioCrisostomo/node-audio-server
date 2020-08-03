@@ -22,6 +22,7 @@ export default class Player {
   constructor(el, options) {
     this.wrapper = el;
     this.audio = elFrom("audio", null, el);
+    attachEME(this.audio);
     this.options = options;
 
     this.manifest = null;
@@ -175,8 +176,11 @@ export default class Player {
   loadChunk(next, timestampOffset) {
     if (!next) return;
     this.loadingChunk = true;
-
-    fetch("/chunk/" + next.name)
+    const encrypted = false;
+    const path =
+      "/chunk/" +
+      (encrypted ? next.name.slice(0, -3) + "_encrypted.mp4" : next.name);
+    fetch(path)
       .then((res) => res.arrayBuffer())
       .then((data) => {
         next.data = data;
@@ -275,4 +279,90 @@ export default class Player {
     window.removeEventListener("pointermove", this.onPointerMove);
     window.removeEventListener("pointerup", this.onPointerUp);
   };
+}
+
+function attachEME(audio) {
+  // Define a key: hardcoded in this example
+  // – this corresponds to the key used for encryption
+
+  let config = [
+    {
+      // initDataTypes: ["cenc", "keyids"], // keyids, cenc
+      audioCapabilities: [{ contentType: mimeType }],
+    },
+  ];
+
+  audio.addEventListener("encrypted", handleEncrypted, false);
+
+  navigator
+    .requestMediaKeySystemAccess("org.w3.clearkey", config)
+    .then(function (keySystemAccess) {
+      console.log(".then(function (keySystemAccess)");
+      return keySystemAccess.createMediaKeys();
+    })
+    .then(function (createdMediaKeys) {
+      console.log(".then(function (createdMediaKeys)");
+      return audio.setMediaKeys(createdMediaKeys);
+    })
+    .catch(function (error) {
+      console.error("Failed to set up MediaKeys", error);
+    });
+
+  function handleEncrypted(event) {
+    console.log("handleEncrypted", event);
+    var session = audio.mediaKeys.createSession();
+    session.addEventListener("message", handleMessage, false);
+    session
+      .generateRequest(event.initDataType, event.initData)
+      .catch(function (error) {
+        console.error("Failed to generate a license request", error);
+      });
+  }
+
+  function handleMessage(event) {
+    console.log("handleMessage", event);
+    // If you had a license server, you would make an asynchronous XMLHttpRequest
+    // with event.message as the body.  The response from the server, as a
+    // Uint8Array, would then be passed to session.update().
+    // Instead, we will generate the license synchronously on the client, using
+    // the hard-coded KEY.
+    var license = generateLicense(event.message);
+
+    var session = event.target;
+    session.update(license).catch(function (error) {
+      console.error("Failed to update the session", error);
+    });
+  }
+
+  // Convert Uint8Array into base64 using base64url alphabet, without padding.
+  function toBase64(u8arr) {
+    return btoa(String.fromCharCode.apply(null, u8arr))
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=*$/, "");
+  }
+
+  // This takes the place of a license server.
+  // kids is an array of base64-encoded key IDs
+  // keys is an array of base64-encoded keys
+  function generateLicense(message) {
+    console.log("generateLicense", message);
+    // Parse the clearkey license request.
+    var request = JSON.parse(new TextDecoder().decode(message));
+    // We only know one key, so there should only be one key ID.
+    // A real license server could easily serve multiple keys.
+    console.assert(request.kids.length === 1);
+
+    var keyObj = {
+      kty: "oct",
+      alg: "A128KW",
+      kid: "a7e61c373e219033c21091fa607bf3b8",
+      k: "76a6c65c5ea762046bd749a2e632ccbb",
+    };
+    return new TextEncoder().encode(
+      JSON.stringify({
+        keys: [keyObj],
+      })
+    );
+  }
 }
