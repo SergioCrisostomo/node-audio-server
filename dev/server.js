@@ -5,17 +5,21 @@ const path = require("path");
 const fs = require("fs").promises;
 const api = require("../src/index");
 const getFiles = require("../src/server/utils/getFiles");
+const testKeys = require("./testKeys.json");
+const dependencyLibrariesPath = require("./dependencyLibrariesPath");
 
 const mediaFolder = path.join(__dirname, "media/output");
 api
   .createPlaylist({
     inputPath: path.join(__dirname, "media"),
     targetPath: mediaFolder,
-    segmentTime: Infinity,
+    segmentTime: 5,
     bitrates: [
       { codec: "mp4", bitrate: "192k", extension: "mp4" },
       // { codec: "libmp3lame", bitrate: "8k", extension: "mp3" },
     ],
+    encryptionKeys: testKeys,
+    dependencyLibrariesPath,
   })
   .catch((err) => console.log("::: createPlaylist failed", err));
 
