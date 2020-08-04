@@ -8,7 +8,7 @@ const RED = "\x1b[31m";
 module.exports = (spawnArguments, debug) => {
   return new Promise(function (resolve, rej) {
     const [cmd, args, options = {}] = spawnArguments;
-    if (true || DEBUG || debug) console.log(BLUE, cmd, args.join(" "), BLACK);
+    if (DEBUG || debug) console.log(BLUE, cmd, args.join(" "), BLACK);
 
     const proc = spawn(cmd, args, options);
     let stderr = "\n::::::::::::::::::::::\n";
