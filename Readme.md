@@ -26,10 +26,10 @@ Creating a prototype (PoC) player with some of the Roadmap functionality. WIP.
   - [x] load chunks on demand (no need to download all chunks if the player is paused)
   - [x] show what parts are downloaded in the progress bar
   - [x] enable seek
-- [ ] enable encryption in server-client audio data
+- [x] enable encryption in server-client audio data (clear key)
 - [ ] use different bitrates depending on network performance
 - [ ] audio play tracking and more DRM analytics
-- [ ] use flac and opus (currently only .mp3 is working)
+- [ ] use flac and opus (currently only .mp4 container is implemented)
 - [ ] client side player
   - [ ] in React
   - [ ] in Vue.js
@@ -39,3 +39,10 @@ Creating a prototype (PoC) player with some of the Roadmap functionality. WIP.
 
 - feel free to reach out
 - install, check the tests or check the dev-server with `npm run dev` and open `localhost:3000` in your favorite browser
+
+## Dependencies
+
+#### At file conversion time (`createPlaylist` API)
+
+- [ffmpeg](https://ffmpeg.org/)
+- [Bento4](https://github.com/axiomatic-systems/Bento4)
