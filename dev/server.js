@@ -9,21 +9,25 @@ const testKeys = require("./testKeys.json");
 const dependencyLibrariesPath = require("./dependencyLibrariesPath");
 
 const mediaFolder = path.join(__dirname, "media/output");
-api
-  .createPlaylist({
-    inputPath: path.join(__dirname, "media"),
-    targetPath: mediaFolder,
-    segmentTime: 5,
-    bitrates: [
-      { bitrate: "192k", extension: "mp4" },
-      // {bitrate: "8k", extension: "mp4" },
-    ],
-    encryptionKeys: testKeys,
-    dependencyLibrariesPath,
-  })
-  .catch((err) => console.log("::: createPlaylist failed", err));
-
 const getChunk = api.serveAudio({ mediaFolder });
+
+const recompileCachedFiles = false;
+
+if (recompileCachedFiles) {
+  api
+    .createPlaylist({
+      inputPath: path.join(__dirname, "media"),
+      targetPath: mediaFolder,
+      segmentTime: 5,
+      bitrates: [
+        { bitrate: "192k", extension: "mp4" },
+        // {bitrate: "8k", extension: "mp4" },
+      ],
+      encryptionKeys: testKeys,
+      dependencyLibrariesPath,
+    })
+    .catch((err) => console.log("::: createPlaylist failed", err));
+}
 
 const app = express();
 app.use(cors());
@@ -62,14 +66,22 @@ const server = app.listen(3000, () => {
   console.log("App listening at http://%s:%s", host, port);
 });
 process.on("SIGINT", async () => {
-  console.info("SIGINT signal received. Deleting generated files.");
-  const dir = path.join(__dirname, "/media/output/");
+  if (recompileCachedFiles) {
+    console.info("SIGINT signal received. Deleting generated files.");
+    const dir = path.join(__dirname, "/media/output/");
 
-  try {
-    await fs.rmdir(dir, { recursive: true });
-    await fs.mkdir(dir);
-  } catch (e) {
-    console.log("Error after SIGINT was called", e);
+    try {
+      await fs.rmdir(dir, { recursive: true });
+      try {
+        await fs.mkdir(dir);
+      } catch (err) {
+        if (err && err.code != "EEXIST") {
+          console.log("Error creating media output folder");
+        }
+      }
+    } catch (e) {
+      console.log("Error after SIGINT was called", e);
+    }
   }
 
   process.exit(0);
