@@ -22,7 +22,8 @@ const makePlaylist = ({
         segmentTime !== Infinity
           ? ("0".repeat(digitsInName) + i).slice(-digitsInName)
           : "000";
-      return `${chunkBaseName}_${index}.${extension}`;
+      const outputFileName = `${chunkBaseName}_${bitrate}_${index}.${extension}`;
+      return outputFileName;
     })();
 
     return {

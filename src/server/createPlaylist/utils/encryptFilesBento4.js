@@ -10,6 +10,7 @@ const encryptFilesBento4 = (files, options) => {
   );
 
   const encryptions = files.map((file) => {
+    const outputFileName = file.slice(0, -4) + "_encrypted.mp4";
     const args = [
       "--method",
       "MPEG-CENC",
@@ -19,19 +20,16 @@ const encryptFilesBento4 = (files, options) => {
       `1:KID:${KID}`,
       ["--global-option", "mpeg-cenc.eme-pssh:true"],
       file,
-      file.slice(0, -4) + "_encrypted.mp4",
+      outputFileName,
     ]
       .filter(Boolean)
       .flat();
 
-    return spawn([bento4Path, args], false);
+    return spawn([bento4Path, args], false).then(() => outputFileName);
   });
 
   return Promise.all(encryptions)
-    .then(() => {
-      return files.map((file) => file.slice(0, -3) + "mp4");
-    })
-    .catch((err) => console.log("Error encrypting files", err));
+  .catch((err) => console.log("Error encrypting files", err));
 };
 
 module.exports = encryptFilesBento4;
