@@ -1,5 +1,6 @@
-const spawn = require("./spawn");
 const path = require("path");
+const fs = require("fs").promises;
+const spawn = require("./spawn");
 
 const encryptFilesBento4 = (files, options) => {
   const { KEY, KID, IV } = options.encryptionKeys;
@@ -10,7 +11,7 @@ const encryptFilesBento4 = (files, options) => {
   );
 
   const encryptions = files.map((file) => {
-    const outputFileName = file.slice(0, -4) + "_encrypted.mp4";
+    const outputFileName = file.slice(0, -4) + "_cenc.mp4";
     const args = [
       "--method",
       "MPEG-CENC",
@@ -25,11 +26,14 @@ const encryptFilesBento4 = (files, options) => {
       .filter(Boolean)
       .flat();
 
-    return spawn([bento4Path, args], false).then(() => outputFileName);
+    return spawn([bento4Path, args], false)
+      .then(() => fs.unlink(file))
+      .then(() => outputFileName);
   });
 
-  return Promise.all(encryptions)
-  .catch((err) => console.log("Error encrypting files", err));
+  return Promise.all(encryptions).catch((err) =>
+    console.log("Error encrypting files", err)
+  );
 };
 
 module.exports = encryptFilesBento4;

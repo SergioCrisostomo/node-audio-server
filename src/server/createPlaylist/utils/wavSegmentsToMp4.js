@@ -1,5 +1,7 @@
-const spawn = require("./spawn");
+const fs = require("fs").promises;
 const path = require("path");
+const spawn = require("./spawn");
+
 const { digitsInName } = require("../defaults");
 
 const wavSegmentsToMp4 = (files, options) => {
@@ -18,7 +20,9 @@ const wavSegmentsToMp4 = (files, options) => {
       .filter(Boolean)
       .flat();
 
-    return spawn(["ffmpeg", args]).then(() => outputFileName);
+    return spawn(["ffmpeg", args])
+      .then(() => fs.unlink(file))
+      .then(() => outputFileName);
   });
 
   return Promise.all(convertions).catch((err) =>

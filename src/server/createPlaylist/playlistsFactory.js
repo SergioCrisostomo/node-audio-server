@@ -14,6 +14,7 @@ const makePlaylist = ({
   numberOfChunks,
   outputBaseName,
   segmentTime,
+  encryptionKeys,
 }) =>
   [...Array(numberOfChunks)].map((_, i) => {
     const name = (() => {
@@ -22,7 +23,8 @@ const makePlaylist = ({
         segmentTime !== Infinity
           ? ("0".repeat(digitsInName) + i).slice(-digitsInName)
           : "000";
-      const outputFileName = `${chunkBaseName}_${bitrate}_${index}.${extension}`;
+      const encryptionTag = encryptionKeys ? "_cenc" : "";
+      const outputFileName = `${chunkBaseName}_${bitrate}_${index}${encryptionTag}.${extension}`;
       return outputFileName;
     })();
 
@@ -67,9 +69,9 @@ module.exports = async function generatePlayLists(config) {
       numberOfChunks,
       duration,
     };
-    // console.log("Would process", bitrate, settings);
 
     manifest.playlists[bitrateSettings.bitrate] = makePlaylist({
+      ...config,
       ...bitrateSettings,
       duration,
       numberOfChunks,

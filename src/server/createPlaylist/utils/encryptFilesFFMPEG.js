@@ -14,7 +14,7 @@ const encryptFilesFFMPEG = (files) => {
       "-encryption_kid",
       KID,
       fragment && ["-frag_duration", "10000"],
-      file.slice(0, -4) + "_encrypted.mp4",
+      file.slice(0, -4) + "_cenc.mp4",
     ]
       .filter(Boolean)
       .flat();

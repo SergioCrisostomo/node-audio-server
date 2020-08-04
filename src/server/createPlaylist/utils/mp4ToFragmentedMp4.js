@@ -19,6 +19,18 @@ const mp4ToFragmentedMp4 = (files) => {
 
       return Promise.all(renames)
         .catch((err) => console.log("Error renaming back files", err))
+        .then(() => {
+          // delete extra dash .mpd files
+          const deletions = files.map((fileName) => {
+            const [name] = fileName.split(".");
+            const dashMpd = `${name}_dash.mpd`;
+
+            return fs.unlink(dashMpd);
+          });
+          return Promise.all(deletions).catch((err) =>
+            console.log("Error deleting .mpd files", err)
+          );
+        })
         .then(() => files);
     })
     .catch((err) => console.log("Error using mp4ToFragmentedMp4", err));
