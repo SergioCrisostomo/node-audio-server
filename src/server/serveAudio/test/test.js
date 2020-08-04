@@ -22,10 +22,8 @@ describe("Serve audio", () => {
   afterEach(resetTestFolder);
 
   it("Should serve the expected audio chunk", async () => {
-    const ID = "long_input_44100_192k_000.mp3";
-    const bitrates = [
-      { codec: "libmp3lame", bitrate: "192k", extension: "mp3" },
-    ];
+    const ID = "long_input_44100_192k_000.mp4";
+    const bitrates = [{ bitrate: "192k", extension: "mp4" }];
     await createPlaylists({ inputPath, targetPath, bitrates });
     const expected = await fs.readFile(path.join(targetPath, ID));
     const output = await getChunkData(ID);
@@ -34,15 +32,21 @@ describe("Serve audio", () => {
   });
 
   it("Should cache audio chunks", async () => {
-    const ID = "long_input_44100_1411k_000.flac";
+    const ID = "long_input_44100_128k_000.mp4";
+    // create new to have its own empty cache
+    const getChunkData = serveAudio({
+      mediaFolder: targetPath,
+      cacheLifetime: 2,
+    });
 
-    const bitrates = [{ codec: "flac", bitrate: "1411k", extension: "flac" }];
+    const bitrates = [{ bitrate: "128k", extension: "mp4" }];
 
     await createPlaylists({ inputPath, targetPath, bitrates });
     const start = Date.now();
     const expected = await fs.readFile(path.join(targetPath, ID));
     const fileReadTime = Date.now() - start;
     const output = await getChunkData(ID);
+
     const firstGetCall = Date.now() - fileReadTime - start;
     const output2 = await getChunkData(ID);
     const secondGetCall = Date.now() - fileReadTime - firstGetCall - start;

@@ -14,20 +14,22 @@ describe("Playlist creation", () => {
 
   it("Should create files for a playlist", async () => {
     const expected = [
-      "long_input_44100_1411k_000.flac",
-      "long_input_44100_1411k_001.flac",
-      "short_input_48000_1411k_000.flac",
+      "long_input_44100_192k_000.mp4",
+      "long_input_44100_192k_001.mp4",
+      "short_input_48000_192k_000.mp4",
     ];
-    const bitrates = [{ codec: "flac", bitrate: "1411k", extension: "flac" }];
+    const bitrates = [{ bitrate: "192k", extension: "mp4" }];
     await createPlaylists({ inputPath, targetPath, bitrates });
     const generatedFiles = await fs.readdir(targetPath);
-    const audioFiles = generatedFiles.filter((file) => !file.includes(".json"));
-    assert.equal(JSON.stringify(audioFiles), JSON.stringify(expected));
+    const expectedFilesAreThere = expected.every((file) =>
+      generatedFiles.includes(file)
+    );
+    assert.equal(expectedFilesAreThere, true);
   });
 
   it("Should create json manifest", async () => {
     const expected = ["long_input_44100.json", "short_input_48000.json"];
-    const bitrates = [{ codec: "flac", bitrate: "1411k", extension: "flac" }];
+    const bitrates = [{ bitrate: "192k", extension: "mp4" }];
     await createPlaylists({ inputPath, targetPath, bitrates });
     const generatedFiles = await fs.readdir(targetPath);
     const jsonFiles = generatedFiles.filter((file) => file.includes(".json"));
