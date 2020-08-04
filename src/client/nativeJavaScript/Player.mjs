@@ -178,7 +178,6 @@ export default class Player {
       });
     });
   }
-
   loadChunk(next, timestampOffset) {
     if (!next) return;
     this.loadingChunk = true;
