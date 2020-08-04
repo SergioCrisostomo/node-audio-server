@@ -1,0 +1,87 @@
+{
+    "name": "long_input_44100.wav",
+    "chunkDuration": 5,
+    "numberOfChunks": 11,
+    "duration": 54311,
+    "playlists": {
+        "192k": [
+            {
+                "name": "long_input_44100_192k_000.mp4",
+                "bitrate": "192k",
+                "segmentTime": 5,
+                "chunkIndex": 0,
+                "data": null
+            },
+            {
+                "name": "long_input_44100_192k_001.mp4",
+                "bitrate": "192k",
+                "segmentTime": 5,
+                "chunkIndex": 1,
+                "data": null
+            },
+            {
+                "name": "long_input_44100_192k_002.mp4",
+                "bitrate": "192k",
+                "segmentTime": 5,
+                "chunkIndex": 2,
+                "data": null
+            },
+            {
+                "name": "long_input_44100_192k_003.mp4",
+                "bitrate": "192k",
+                "segmentTime": 5,
+                "chunkIndex": 3,
+                "data": null
+            },
+            {
+                "name": "long_input_44100_192k_004.mp4",
+                "bitrate": "192k",
+                "segmentTime": 5,
+                "chunkIndex": 4,
+                "data": null
+            },
+            {
+                "name": "long_input_44100_192k_005.mp4",
+                "bitrate": "192k",
+                "segmentTime": 5,
+                "chunkIndex": 5,
+                "data": null
+            },
+            {
+                "name": "long_input_44100_192k_006.mp4",
+                "bitrate": "192k",
+                "segmentTime": 5,
+                "chunkIndex": 6,
+                "data": null
+            },
+            {
+                "name": "long_input_44100_192k_007.mp4",
+                "bitrate": "192k",
+                "segmentTime": 5,
+                "chunkIndex": 7,
+                "data": null
+            },
+            {
+                "name": "long_input_44100_192k_008.mp4",
+                "bitrate": "192k",
+                "segmentTime": 5,
+                "chunkIndex": 8,
+                "data": null
+            },
+            {
+                "name": "long_input_44100_192k_009.mp4",
+                "bitrate": "192k",
+                "segmentTime": 5,
+                "chunkIndex": 9,
+                "data": null
+            },
+            {
+                "name": "long_input_44100_192k_010.mp4",
+                "bitrate": "192k",
+                "segmentTime": 5,
+                "chunkIndex": 10,
+                "data": null
+            }
+        ]
+    }
+}
