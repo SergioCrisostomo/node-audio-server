@@ -7,31 +7,25 @@ const encryptFilesBento4 = require("./utils/encryptFilesBento4");
 const DEBUG = false;
 
 module.exports = async function generateChunks(options) {
+  const { inputFileName, encryptionKeys } = options;
+
   // options will always be the second argument...
   const runWithOptions = (fn) => (res) => fn(res, options);
 
   if (DEBUG) {
-    console.log(
-      "Starting file processing pipeline for ",
-      options.inputFileName
-    );
+    console.log("Starting file processing pipeline for ", inputFileName);
   }
+
   let pipeline = Promise.resolve()
     .then(runWithOptions(wavToSegmentedWav))
     .then(runWithOptions(wavSegmentsToMp4))
-    .then(runWithOptions(mp4ToFragmentedMp4));
-
-  if (options.encryptionKeys) {
-    pipeline = pipeline.then(runWithOptions(encryptFilesBento4));
-  }
+    .then(runWithOptions(mp4ToFragmentedMp4))
+    .then(encryptionKeys ? runWithOptions(encryptFilesBento4) : () => {});
 
   return pipeline
     .then(() => {
       if (DEBUG) {
-        console.log(
-          "Finished file processing pipeline for ",
-          options.inputFileName
-        );
+        console.log("Finished file processing pipeline for ", inputFileName);
       }
     })
     .catch((err) =>
