@@ -44,41 +44,40 @@ module.exports = async function generatePlayLists(config) {
     inputFileName,
     numberOfChannels,
     outputBaseName,
-    bitrates,
   } = config;
 
   const decimalDuration = await getFileDuration(inputFileName);
   const duration = Math.floor(decimalDuration * 1000); // rounded to ms
-
   const numberOfChunks =
     segmentTime === Infinity ? 1 : Math.ceil(duration / 1000 / segmentTime);
+
+  const options = {
+    ...config,
+    duration,
+    numberOfChunks,
+  };
 
   const manifest = {
     name: path.basename(inputFileName),
     chunkDuration: segmentTime === Infinity ? duration : segmentTime,
     numberOfChunks,
     duration,
+    urlRoot: options.urlRoot,
     playlists: {},
   };
+  if (options.meta) {
+    manifest.meta = options.meta;
+  }
 
-  const generators = bitrates.map((bitrateSettings) => {
-    const opusBitrateSettings = {
-      ...config,
+  const generators = options.bitrates.map((bitrateSettings) => {
+    const settings = {
+      ...options,
       ...bitrateSettings,
-      numberOfChannels,
-      numberOfChunks,
-      duration,
     };
 
-    manifest.playlists[bitrateSettings.bitrate] = makePlaylist({
-      ...config,
-      ...bitrateSettings,
-      duration,
-      numberOfChunks,
-      outputBaseName,
-      segmentTime,
-    });
-    return generateChunks(opusBitrateSettings);
+    manifest.playlists[bitrateSettings.bitrate] = makePlaylist(settings);
+    return Promise.resolve();
+    //return generateChunks(settings);
   });
 
   if (DEBUG) {
