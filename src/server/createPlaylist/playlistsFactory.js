@@ -76,8 +76,8 @@ module.exports = async function generatePlayLists(config) {
     };
 
     manifest.playlists[bitrateSettings.bitrate] = makePlaylist(settings);
-    return Promise.resolve();
-    //return generateChunks(settings);
+
+    return generateChunks(settings);
   });
 
   if (DEBUG) {
