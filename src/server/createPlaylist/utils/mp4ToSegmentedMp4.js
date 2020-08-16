@@ -1,16 +1,15 @@
 const spawn = require("./spawn");
 const { digitsInName } = require("../defaults");
 
-const wavToSegmentedWav = (_, options) => {
+const mp4ToSegmentedMp4 = (inputPath, options) => {
   const { segmentTime, outputBaseName, duration } = options;
 
   const segmentIndex = segmentTime !== Infinity ? `%0${digitsInName}d` : "000";
-  const outputFileName = `${outputBaseName}_${segmentIndex}.wav`;
+  const outputFileName = `${outputBaseName}_${segmentIndex}.mp4`;
 
   const args = [
-    ["-i", options.inputFileName],
-    ["-ar", options.frequencyRate],
-    ["-ac", options.numberOfChannels],
+    ["-i", inputPath],
+    ["-c", "copy"],
     segmentTime !== Infinity && ["-f", "segment", "-segment_time", segmentTime],
     outputFileName,
   ]
@@ -20,10 +19,10 @@ const wavToSegmentedWav = (_, options) => {
   return spawn(["ffmpeg", args])
     .then(() => {
       return [...Array(options.numberOfChunks)].map(
-        (_, i) => `${outputBaseName}_${("00" + i).slice(-3)}.wav`
+        (_, i) => `${outputBaseName}_${("00" + i).slice(-3)}.mp4`
       );
     })
-    .catch((err) => console.log("Error segmenting wav files", err));
+    .catch((err) => console.log("Error segmenting mp4 files", err));
 };
 
-module.exports = wavToSegmentedWav;
+module.exports = mp4ToSegmentedMp4;

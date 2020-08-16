@@ -1,7 +1,6 @@
-// const encryptFilesFFMPEG = require('./utils/encryptFilesFFMPEG')
-const wavToSegmentedWav = require("./utils/wavToSegmentedWav");
-const wavSegmentsToMp4 = require("./utils/wavSegmentsToMp4");
 const mp4ToFragmentedMp4 = require("./utils/mp4ToFragmentedMp4");
+const wavToMp4 = require("./utils/wavToMp4");
+const mp4ToSegmentedMp4 = require("./utils/mp4ToSegmentedMp4");
 const encryptFilesBento4 = require("./utils/encryptFilesBento4");
 
 const DEBUG = false;
@@ -17,8 +16,8 @@ module.exports = async function generateChunks(options) {
   }
 
   let pipeline = Promise.resolve()
-    .then(runWithOptions(wavToSegmentedWav))
-    .then(runWithOptions(wavSegmentsToMp4))
+    .then(runWithOptions(wavToMp4))
+    .then(runWithOptions(mp4ToSegmentedMp4))
     .then(runWithOptions(mp4ToFragmentedMp4))
     .then(encryptionKeys ? runWithOptions(encryptFilesBento4) : () => {});
 
