@@ -9,19 +9,32 @@ module.exports = async function generateChunks(options) {
   const { inputFileName, encryptionKeys } = options;
 
   // options will always be the second argument...
-  const runWithOptions = (fn) => (res) => fn(res, options);
+  const runWithOptions = (fn, step) => (res) => {
+    if (DEBUG) console.log(step, "for", options.inputFileName, "started");
+    return fn(res, options)
+      .then((res) => {
+        if (DEBUG) console.log(step, "for", options.inputFileName, "complete");
+        return res;
+      })
+      .catch((err) => {
+        console.log(step, "failed with", err);
+        throw new Error(err);
+      });
+  };
 
   if (DEBUG) {
     console.log("Starting file processing pipeline for ", inputFileName);
   }
 
-  let pipeline = Promise.resolve()
-    .then(runWithOptions(wavToMp4))
-    .then(runWithOptions(mp4ToSegmentedMp4))
-    .then(runWithOptions(mp4ToFragmentedMp4))
-    .then(encryptionKeys ? runWithOptions(encryptFilesBento4) : () => {});
-
-  return pipeline
+  return Promise.resolve()
+    .then(runWithOptions(wavToMp4, "Wave to mp4 convertion"))
+    .then(runWithOptions(mp4ToSegmentedMp4, "mp4 split into segments"))
+    .then(runWithOptions(mp4ToFragmentedMp4, "mp4 to fragmented mp4"))
+    .then(
+      encryptionKeys
+        ? runWithOptions(encryptFilesBento4, "cenc encryption")
+        : () => {}
+    )
     .then(() => {
       if (DEBUG) {
         console.log("Finished file processing pipeline for ", inputFileName);
