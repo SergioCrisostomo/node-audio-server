@@ -11,22 +11,41 @@ const dependencyLibrariesPath = require("./dependencyLibrariesPath");
 const mediaFolder = path.join(__dirname, "media/output");
 const getChunk = api.serveAudio({ mediaFolder });
 
+const deleteCachedCompiledDevFiles = async () => {
+  const dir = path.join(__dirname, "/media/output/");
+
+  try {
+    await fs.rmdir(dir, { recursive: true });
+    try {
+      await fs.mkdir(dir);
+    } catch (err) {
+      if (err && err.code != "EEXIST") {
+        console.log("Error creating media output folder");
+      }
+    }
+  } catch (e) {
+    console.log("Error after SIGINT was called", e);
+  }
+};
+
 const recompileCachedFiles = false;
 
 if (recompileCachedFiles) {
-  api
-    .createPlaylist({
-      inputPath: path.join(__dirname, "media"),
-      targetPath: mediaFolder,
-      segmentTime: 5,
-      bitrates: [
-        { bitrate: "192k", extension: "mp4" },
-        // {bitrate: "8k", extension: "mp4" },
-      ],
-      encryptionKeys: testKeys,
-      dependencyLibrariesPath,
-    })
-    .catch((err) => console.log("::: createPlaylist failed", err));
+  deleteCachedCompiledDevFiles().then(() => {
+    api
+      .createPlaylist({
+        inputPath: path.join(__dirname, "media"),
+        targetPath: mediaFolder,
+        segmentTime: 5,
+        bitrates: [
+          { bitrate: "192k", extension: "mp4" },
+          // {bitrate: "8k", extension: "mp4" },
+        ],
+        encryptionKeys: testKeys,
+        dependencyLibrariesPath,
+      })
+      .catch((err) => console.log("::: createPlaylist failed", err));
+  });
 }
 
 const app = express();
@@ -68,21 +87,7 @@ const server = app.listen(3000, () => {
 process.on("SIGINT", async () => {
   if (recompileCachedFiles) {
     console.info("SIGINT signal received. Deleting generated files.");
-    const dir = path.join(__dirname, "/media/output/");
-
-    try {
-      await fs.rmdir(dir, { recursive: true });
-      try {
-        await fs.mkdir(dir);
-      } catch (err) {
-        if (err && err.code != "EEXIST") {
-          console.log("Error creating media output folder");
-        }
-      }
-    } catch (e) {
-      console.log("Error after SIGINT was called", e);
-    }
+    await deleteCachedCompiledDevFiles();
   }
-
   process.exit(0);
 });
