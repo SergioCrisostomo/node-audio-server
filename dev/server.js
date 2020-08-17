@@ -41,7 +41,12 @@ if (recompileCachedFiles) {
           { bitrate: "192k", extension: "mp4" },
           // {bitrate: "8k", extension: "mp4" },
         ],
-        encryptionKeys: testKeys,
+        encryptionKeys(inputFileName, chunkNr, totalChunks) {
+          console.log(
+            `Providing keys to ${inputFileName}. Chunk ${chunkNr} of ${totalChunks}`
+          );
+          return testKeys;
+        },
         dependencyLibrariesPath,
       })
       .catch((err) => console.log("::: createPlaylist failed", err));

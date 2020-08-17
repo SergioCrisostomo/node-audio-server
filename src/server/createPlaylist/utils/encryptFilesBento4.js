@@ -3,14 +3,18 @@ const fs = require("fs").promises;
 const spawn = require("./spawn");
 
 const encryptFilesBento4 = (files, options) => {
-  const { KEY, KID, IV } = options.encryptionKeys;
-
   const bento4Path = path.join(
     options.dependencyLibrariesPath.bento4Path || "",
     "mp4encrypt"
   );
 
-  const encryptions = files.map((file) => {
+  const encryptions = files.map((file, i, arr) => {
+    const { KEY, KID, IV } = options.encryptionKeys(
+      options.inputFileName,
+      i + 1,
+      arr.length
+    );
+
     const outputFileName = file.slice(0, -4) + "_cenc.mp4";
     const args = [
       "--method",
