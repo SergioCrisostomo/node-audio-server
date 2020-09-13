@@ -28,6 +28,12 @@ export default class Player {
   constructor(el, options) {
     this.wrapper = el;
     this.audio = elFrom("audio", null, el);
+    this.audio.addEventListener("progress", (e) => {
+      for (let i = 0; i < this.audio.buffered.length; i++) {
+        const bufferedStart = this.audio.buffered.start(i);
+        const bufferedEnd = this.audio.buffered.end(i);
+      }
+    });
     attachEME(this.audio);
     this.options = options;
 
@@ -292,10 +298,6 @@ function EnsureMediaKeysCreated(el, keySystem, options, encryptedEvent) {
     return ensurePromise;
   }
 
-  console.log(
-    "navigator.requestMediaKeySystemAccess(" + JSON.stringify(options) + ")"
-  );
-
   ensurePromise = navigator
     .requestMediaKeySystemAccess(keySystem, options)
     .then(
@@ -307,7 +309,6 @@ function EnsureMediaKeysCreated(el, keySystem, options, encryptedEvent) {
 
     .then(
       function (mediaKeys) {
-        console.log("created MediaKeys object ok");
         return el.setMediaKeys(mediaKeys);
       },
       () => console.log("failed to create MediaKeys object")
@@ -371,27 +372,18 @@ function attachEME(audio) {
   audio.sessions = [];
   audio.addEventListener("encrypted", (ev) => {
     EnsureMediaKeysCreated(audio, "org.w3.clearkey", config).then(() => {
-      console.log("ensured MediaKeys available on HTMLMediaElement");
       const session = audio.mediaKeys.createSession();
       audio.sessions.push(session);
       session.addEventListener("message", handleMessage);
       session.addEventListener("keystatuseschange", function KeysChange(event) {
         const session = event.target;
-        console.log("keystatuseschange event on session" + session.sessionId);
+
         const map = session.keyStatuses;
         for (let entry of map.entries()) {
           const keyId = entry[0];
           const status = entry[1];
           const base64KeyId = Base64ToHex(
             window.btoa(ArrayBufferToString(keyId))
-          );
-          console.log(
-            "SessionId=" +
-              session.sessionId +
-              " keyId=" +
-              base64KeyId +
-              " status=" +
-              status
           );
         }
       });
@@ -412,12 +404,11 @@ function attachEME(audio) {
     // Uint8Array, would then be passed to session.update().
     // Instead, we will generate the license synchronously on the client, using
     // the hard-coded KEY.
-    console.log("handleMessage", event);
+
     var msgStr = ArrayBufferToString(ev.message);
-    console.log(" got message from CDM: " + msgStr);
 
     var msg = JSON.parse(msgStr);
-    console.log("MSG", msg);
+
     var outKeys = [];
 
     for (var i = 0; i < msg.kids.length; i++) {
@@ -426,7 +417,6 @@ function attachEME(audio) {
       var key = keys[idHex];
 
       if (key) {
-        console.log(" found key " + key + " for key id " + idHex);
         outKeys.push({
           kty: "oct",
           alg: "A128KW",
@@ -442,26 +432,20 @@ function attachEME(audio) {
       keys: outKeys,
       type: msg.type,
     });
-    console.log(" sending update message to CDM: " + update);
 
-    ev.target.update(StringToArrayBuffer(update)).then(
-      function () {
-        console.log(" MediaKeySession update ok!");
-      },
-      () => console.log(" MediaKeySession update failed")
-    );
+    ev.target
+      .update(StringToArrayBuffer(update))
+      .catch(() => console.log(" MediaKeySession update failed"));
   }
 
   // This takes the place of a license server.
   // kids is an array of base64-encoded key IDs
   // keys is an array of base64-encoded keys
   function generateLicense(message) {
-    console.log("generateLicense", message);
     // Parse the clearkey license request.
     var request = JSON.parse(new TextDecoder().decode(message));
     // We only know one key, so there should only be one key ID.
     // A real license server could easily serve multiple keys.
-    console.assert(request.kids.length === 1);
 
     var keyObj = {
       kty: "oct",
