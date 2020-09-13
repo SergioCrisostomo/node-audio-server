@@ -1,4 +1,4 @@
-import Player from "/nativeJavaScript/Player.mjs";
+import Player from "/src/client/nativeJavaScript/Player.mjs";
 
 const playerContainer = document.querySelector(".audio-player-container");
 const player = new Player(playerContainer);

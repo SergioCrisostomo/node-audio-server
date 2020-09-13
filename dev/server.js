@@ -61,9 +61,9 @@ app.use((req, res, next) => {
 });
 
 app.get("/", (req, res) => res.sendFile(__dirname + "/index.html"));
-app.get(/\.mjs/, (req, res) => {
-  const scriptPath = path.join(__dirname, "../src/client/", req.originalUrl);
-  console.log(scriptPath);
+app.get(/\.m?js/, (req, res) => {
+  const scriptPath = path.join(__dirname, "../", req.originalUrl);
+  console.log("Will serve:", scriptPath);
   res.sendFile(scriptPath);
 });
 
